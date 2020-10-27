@@ -1,14 +1,11 @@
-<template>
-  <div class="app-container">
-    <switch-roles @change="handleRolesChange" />
-    <div :key="key" style="margin-top:30px;">
-      <div>
-        <span v-permission="'demo_admin'" class="permission-alert">
-          Only <el-tag class="permission-tag" size="small">admin</el-tag> can see this
-        </span>
-      </div>
-    </div>
-  </div>
+<template lang="pug">
+	.app-container
+		switch-roles(@change="handleRolesChange")
+		div(:key="key" style="margin-top:30px;")
+			div
+				span.permission-alert(v-permission="'demo_admin'") Only
+					el-tag.permission-tag(size="small") admin
+					| can see this
 </template>
 
 <script>
