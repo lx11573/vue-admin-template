@@ -113,7 +113,6 @@ export default {
     },
     generateTree(permissions, parentId, list = []) {
       permissions.map(item => {
-        debugger
         if (parentId === item.parentId) {
           if (item.uri === '' || item.uri === '#' || item.permissionId === 1) {
             list.push({

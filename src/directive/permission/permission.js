@@ -1,13 +1,11 @@
 import store from '@/store'
 
 function checkPermission(el, binding) {
-  console.log(binding)
   const { value } = binding
   const roles = store.getters && store.getters.roles
 
   if (value) {
     if (value.length > 0) {
-      debugger
       const permissionRoles = value
 
       const hasPermission = roles.some(role => {

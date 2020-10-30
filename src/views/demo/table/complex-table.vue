@@ -25,14 +25,18 @@
       </el-checkbox>
     </div>
 
-    <el-table
+    <ex-table
       :key="tableKey"
       v-loading="listLoading"
       :data="list"
       border
       fit
       highlight-current-row
+      :total="total"
+      :current-page.sync="listQuery.page"
+      :limit.sync="listQuery.limit"
       style="width: 100%;"
+      @pageChange="getList"
       @sort-change="sortChange"
     >
       <el-table-column label="ID" prop="id" sortable="custom" align="center" width="80" :class-name="getSortClass('id')">
@@ -95,9 +99,9 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </ex-table>
 
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
+    <!--    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />-->
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
@@ -150,7 +154,8 @@
 import { fetchPv, createArticle, updateArticle } from '@/api/article'
 import waves from '@/directive/waves' // waves directive
 import { parseTime } from '@/utils'
-import Pagination from '@/components/Pagination/index' // secondary package based on el-pagination
+import ExTable from '@/components/ExTable/ex-table'
+// import Pagination from '@/components/Pagination/index' // secondary package based on el-pagination
 import { ListFunc } from '../../../../data/article'
 
 const calendarTypeOptions = [
@@ -168,7 +173,7 @@ const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
 
 export default {
   name: 'ComplexTable',
-  components: { Pagination },
+  components: { ExTable },
   directives: { waves },
   filters: {
     statusFilter(status) {
@@ -232,6 +237,7 @@ export default {
   },
   methods: {
     getList() {
+      this.listLoading = true
       this.list = ListFunc()
       this.total = 100
       setTimeout(() => {
@@ -376,5 +382,8 @@ export default {
 <style scoped>
 	.link-type {
 		margin-right: 10px;
+	}
+	.filter-item {
+		margin-right: 6px;
 	}
 </style>

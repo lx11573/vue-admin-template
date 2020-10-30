@@ -10,18 +10,24 @@
         tag="span"
         class="tags-view-item"
         @click.middle.native="!isAffix(tag)?closeSelectedTag(tag):''"
-        @contextmenu.prevent.native="openMenu(tag,$event)"
       >
+        <!--@contextmenu.prevent.native="openMenu(tag,$event)"-->
         {{ tag.title }}
         <span v-if="!isAffix(tag)" class="el-icon-close" @click.prevent.stop="closeSelectedTag(tag)" />
       </router-link>
     </scroll-pane>
-    <ul v-show="visible" :style="{left:left+'px',top:top+'px'}" class="contextmenu">
-      <li @click="refreshSelectedTag(selectedTag)">Refresh</li>
-      <li v-if="!isAffix(selectedTag)" @click="closeSelectedTag(selectedTag)">Close</li>
-      <li @click="closeOthersTags">Close Others</li>
-      <li @click="closeAllTags(selectedTag)">Close All</li>
-    </ul>
+    <div style="position: absolute;right: 0;top: 0;height:33px;z-index:1987;display: flex;align-items: center;background:#fff">
+      <ul v-show="visible" class="contextmenu" :style="style">
+        <li v-if="!isAffix(selectedTag)" @click="closeSelectedTag(selectedTag)">关闭</li>
+        <li @click="closeOthersTags">关闭其他</li>
+        <li @click="closeAllTags(selectedTag)">关闭全部</li>
+      </ul>
+      <div style="width: 40px;line-height:33px;text-align:center;border-left: 1px solid #ddd;font-weight: bold;color:#666;font-size: 24px" @click.stop="openMenu">
+        <i class="el-icon-menu" /></div>
+      <div style="width: 40px;line-height:33px;text-align:center;border-left: 1px solid #ddd;font-weight: bold;color:#666;font-size: 22px" @click="refreshSelectedTag(selectedTag)">
+        <i class="el-icon-refresh" /></div>
+    </div>
+
   </div>
 </template>
 
@@ -34,8 +40,7 @@ export default {
   data() {
     return {
       visible: false,
-      top: 0,
-      left: 0,
+      style: {},
       selectedTag: {},
       affixTags: []
     }
@@ -67,7 +72,11 @@ export default {
   },
   methods: {
     isActive(route) {
-      return route.path === this.$route.path
+      const actived = route.path === this.$route.path
+      if (actived) {
+        this.selectedTag = route
+      }
+      return actived
     },
     isAffix(tag) {
       return tag.meta && tag.meta.affix
@@ -171,21 +180,27 @@ export default {
       }
     },
     openMenu(tag, e) {
-      const menuMinWidth = 105
-      const offsetLeft = this.$el.getBoundingClientRect().left // container margin left
-      const offsetWidth = this.$el.offsetWidth // container width
-      const maxLeft = offsetWidth - menuMinWidth // left boundary
-      const left = e.clientX - offsetLeft + 15 // 15: margin right
-
-      if (left > maxLeft) {
-        this.left = maxLeft
-      } else {
-        this.left = left
-      }
-
-      this.top = e.clientY
-      this.visible = true
-      this.selectedTag = tag
+      this.visible = !this.visible
+      // if (e === void (0)) {
+      //   this.style = {}
+      //   return
+      // }
+      // const menuMinWidth = 105
+      // const offsetLeft = this.$el.getBoundingClientRect().left // container margin left
+      // const offsetWidth = this.$el.offsetWidth // container width
+      // const maxLeft = offsetWidth - menuMinWidth // left boundary
+      // let left = e.clientX - offsetLeft + 15 // 15: margin right
+      //
+      // if (left > maxLeft) {
+      //   left = maxLeft
+      // }
+      //
+      // this.top = e.clientY
+      // this.style = {
+      //   top: e.clientY + 'px',
+      //   left: left + 'px'
+      // }
+      // this.visible = true
     },
     closeMenu() {
       this.visible = false
@@ -199,12 +214,14 @@ export default {
 
 <style lang="scss" scoped>
 .tags-view-container {
+	position: relative;
   height: 34px;
   width: 100%;
   background: #fff;
   border-bottom: 1px solid #d8dce5;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
   .tags-view-wrapper {
+		width: calc(100% - 80px);
     .tags-view-item {
       display: inline-block;
       position: relative;
@@ -242,10 +259,13 @@ export default {
     }
   }
   .contextmenu {
+		position: absolute;
+		top: 34px;
+		right: 40px;
+		width: 80px;
     margin: 0;
     background: #fff;
     z-index: 3000;
-    position: absolute;
     list-style-type: none;
     padding: 5px 0;
     border-radius: 4px;
@@ -270,17 +290,15 @@ export default {
 .tags-view-wrapper {
   .tags-view-item {
     .el-icon-close {
-      width: 16px;
-      height: 16px;
-      vertical-align: 2px;
+      width: 18px;
+      height: 18px;
+			line-height: 18px;
       border-radius: 50%;
       text-align: center;
       transition: all .3s cubic-bezier(.645, .045, .355, 1);
       transform-origin: 100% 50%;
       &:before {
-        transform: scale(.6);
         display: inline-block;
-        vertical-align: -3px;
       }
       &:hover {
         background-color: #b4bccc;

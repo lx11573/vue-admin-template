@@ -54,7 +54,46 @@ export const demoRouter = {
         }
       ]
     },
-
+    {
+      path: '/permission',
+      component: Demo,
+      redirect: '/permission/page',
+      alwaysShow: true, // will always show the root menu
+      name: 'Permission',
+      meta: {
+        title: '权限控制',
+        icon: 'lock'
+      },
+      children: [
+        {
+          path: 'page',
+          component: () => import('@/views/demo/permission/page'),
+          name: 'PagePermission',
+          meta: {
+            title: '页面权限',
+            roles: 'demo_admin' // or you can only set roles in sub nav
+          }
+        },
+        {
+          path: 'directive',
+          component: () => import('@/views/demo/permission/directive'),
+          name: 'DirectivePermission',
+          meta: {
+            title: '指令权限'
+            // if do not set roles, means: this page does not require permission
+          }
+        },
+        {
+          path: 'role',
+          component: () => import('@/views/demo/permission/role'),
+          name: 'RolePermission',
+          meta: {
+            title: '角色权限',
+            roles: 'demo_admin'
+          }
+        }
+      ]
+    },
     /** when your routing map is too long, you can split it into small modules **/
     componentsRouter,
     chartsRouter,
@@ -68,8 +107,7 @@ export const demoRouter = {
       name: 'Example',
       meta: {
         title: '示例',
-        icon: 'el-icon-s-help',
-        roles: ['admin']
+        icon: 'el-icon-s-help'
       },
       children: [
         {

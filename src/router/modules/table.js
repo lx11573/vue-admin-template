@@ -22,13 +22,13 @@ const tableRouter = {
       path: 'drag-table',
       component: () => import('@/views/demo/table/drag-table'),
       name: 'DragTable',
-      meta: { title: 'Drag Table' }
+      meta: { title: '拖拽表格' }
     },
     {
       path: 'inline-edit-table',
       component: () => import('@/views/demo/table/inline-edit-table'),
       name: 'InlineEditTable',
-      meta: { title: 'Inline Edit' }
+      meta: { title: '行内编辑' }
     },
     {
       path: 'complex-table',

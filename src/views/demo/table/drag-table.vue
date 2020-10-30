@@ -8,37 +8,37 @@
         </template>
       </el-table-column>
 
-      <el-table-column width="180px" align="center" label="Date">
+      <el-table-column width="180px" align="center" label="日期">
         <template slot-scope="{row}">
-          <span>{{ row.timestamp | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ row.timestamp | parseTime('{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column min-width="300px" label="Title">
+      <el-table-column min-width="300px" label="标题">
         <template slot-scope="{row}">
           <span>{{ row.title }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column width="110px" align="center" label="Author">
+      <el-table-column width="110px" align="center" label="作者">
         <template slot-scope="{row}">
           <span>{{ row.author }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column width="100px" label="Importance">
+      <el-table-column width="100px" label="级别">
         <template slot-scope="{row}">
           <svg-icon v-for="n in + row.importance" :key="n" icon-class="star" class="icon-star" />
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="Readings" width="95">
+      <el-table-column align="center" label="阅读数量" width="95">
         <template slot-scope="{row}">
           <span>{{ row.pageviews }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column class-name="status-col" label="Status" width="110">
+      <el-table-column class-name="status-col" label="状态" width="110">
         <template slot-scope="{row}">
           <el-tag :type="row.status | statusFilter">
             {{ row.status }}
@@ -46,7 +46,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="Drag" width="80">
+      <el-table-column align="center" label="拖拽" width="80">
         <template slot-scope="{}">
           <svg-icon class="drag-handler" icon-class="drag" />
         </template>
@@ -62,8 +62,9 @@
 </template>
 
 <script>
-import { fetchList } from '@/api/article'
+// import { fetchList } from '@/api/article'
 import Sortable from 'sortablejs'
+import { ListFunc } from '../../../../data/article'
 
 export default {
   name: 'DragTable',
@@ -97,9 +98,9 @@ export default {
   methods: {
     async getList() {
       this.listLoading = true
-      const { data } = await fetchList(this.listQuery)
-      this.list = data.items
-      this.total = data.total
+      // const { data } = await fetchList(this.listQuery)
+      this.list = ListFunc()
+      this.total = 100
       this.listLoading = false
       this.oldList = this.list.map(v => v.id)
       this.newList = this.oldList.slice()

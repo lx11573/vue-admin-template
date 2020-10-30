@@ -1,6 +1,7 @@
 'use strict'
 const path = require('path')
 const defaultSettings = require('./src/settings.js')
+const CompressionPlugin = require('compression-webpack-plugin')
 
 function resolve(dir) {
   return path.join(__dirname, dir)
@@ -24,7 +25,7 @@ module.exports = {
    * In most cases please use '/' !!!
    * Detail: https://cli.vuejs.org/config/#publicpath
    */
-  publicPath: '/',
+  publicPath: process.env.NODE_ENV === 'development' ? '/' : '/test/',
   outputDir: 'dist',
   assetsDir: 'static',
   lintOnSave: process.env.NODE_ENV === 'development',
@@ -44,15 +45,30 @@ module.exports = {
     }
     // before: require('./mock/mock-server.js')
   },
-  configureWebpack: {
-    // provide the app's title in webpack's name field, so that
-    // it can be accessed in index.html to inject the correct title.
-    name: name,
-    resolve: {
-      alias: {
-        '@': resolve('src')
+  configureWebpack: () => {
+    const conf = {
+      name: name,
+      resolve: {
+        alias: {
+          '@': resolve('src')
+        }
       }
     }
+    if (process.env.NODE_ENV === 'production') {
+      Object.assign(conf, {
+        plugins: [
+          new CompressionPlugin({
+            test: /\.js$|\.css$|\.html$/,
+            threshold: 10240,
+            deleteOriginalAssets: false
+          })
+        ]
+      })
+    }
+    return conf
+
+    // provide the app's title in webpack's name field, so that
+    // it can be accessed in index.html to inject the correct title.
   },
   chainWebpack(config) {
     // it can improve the speed of the first screen, it is recommended to turn on preload
