@@ -1,8 +1,8 @@
 <template lang="pug">
 	#sys
 		div
-			el-button(type="primary" icon="el-icon-plus" @click="allOpenNodes") 全部展开
-			el-button(type="primary" icon="el-icon-minus" @click="allCloseNodes") 全部折叠
+			el-button(type="primary" icon="el-icon-plus" @click="toggleAllNodes") 全部展开
+			el-button(type="primary" icon="el-icon-minus" @click="toggleAllNodes(false)") 全部折叠
 			el-button(type="primary" icon="el-icon-refresh" @click="onRefreshNodes") 刷新
 			.sys-premission
 				el-tree(
@@ -25,25 +25,26 @@
 			el-button(type="danger" icon="el-icon-delete" @click="delNode") 删除节点
 
 			.permission-detail
-				el-input(:value="curSelectedNode.code" readonly)
+				el-input(:value="curCheckedNode.code" readonly)
 					template(slot="prepend") 权限编码
-				el-input(:value="curSelectedNode.permissionName" readonly)
+				el-input(:value="curCheckedNode.permissionName" readonly)
 					template(slot="prepend") 权限名称
-				el-input(:value="curSelectedNode.uri" readonly)
+				el-input(:value="curCheckedNode.uri" readonly)
 					template(slot="prepend") 权限URI
 				el-input(:value="permissionMenu" readonly)
 					template(slot="prepend") 权限类型
-				el-input(:value="curSelectedNode.icon" readonly)
+				el-input(:value="curCheckedNode.icon" readonly)
 					template(slot="prepend") 菜单图标
-				el-input(:value="curSelectedNode.checkCode" readonly)
+				el-input(:value="curCheckedNode.checkCode" readonly)
 					template(slot="prepend") 校验字符
-				el-input(:value="curSelectedNode.permissionSort" readonly)
+				el-input(:value="curCheckedNode.permissionSort" readonly)
 					template(slot="prepend") 展示顺序
+
 		el-dialog(title="新增权限" :visible.sync="showDialog" @closed="resetForm")
 
 			el-form.form(:model="permissionForm" :rules="rules" ref="permissionForm")
 				el-form-item(label="父节点名称" label-width="120px" required)
-					el-input(:value="parentNodeName" autocomplete="off" disabled)
+					el-input(:value="parentNodeName" autocomplete="off" readonly)
 
 				el-form-item(label="权限编码" label-width="120px" prop="code")
 					el-input(v-model="permissionForm.code" autocomplete="off")
@@ -127,28 +128,32 @@ export default {
       return this.routes
     },
     parentNodeName() {
-      if (this.curNode && this.curNode.data) {
-        return this.curNode.data.label
+      if (this.curNode && this.curNode.data.id !== 1) {
+        const parentNode = this.$refs.tree.getNode(this.curNode.data.attr.parentId)
+        if (parentNode) {
+          return parentNode.data.label
+        }
+        return '系统权限'
       }
-      return ''
+      return '系统权限'
     },
-    curSelectedNode() {
+    curCheckedNode() {
       if (this.curNode && this.curNode.data) {
         return this.curNode.data.attr
       }
       return {}
     },
     permissionMenu() {
-      if (!this.curSelectedNode.permissionType) {
+      if (!this.curCheckedNode.permissionType) {
         return ''
       }
-      if (this.curSelectedNode.permissionType === 'menu') {
+      if (this.curCheckedNode.permissionType === 'menu') {
         return '菜单'
       }
       return '操作'
     },
     isRootNode() {
-      return this.curNode.data.label === '系统权限'
+      return (this.curNode.data.id === 1)
     }
   },
   created() {
@@ -159,20 +164,15 @@ export default {
       const allPermission = await getAllPermissions(1)
       this.routes = this.generateTree(allPermission, 0)
     },
-    allOpenNodes() {
+    toggleAllNodes(status = true) {
       const allNodes = this.$refs.tree.store._getAllNodes()
       for (let i = 0; i < allNodes.length; i++) {
-        allNodes[i].expanded = true
-      }
-    },
-    allCloseNodes() {
-      const allNodes = this.$refs.tree.store._getAllNodes()
-      for (let i = 0; i < allNodes.length; i++) {
-        allNodes[i].expanded = false
+        allNodes[i].expanded = status
       }
     },
     onRefreshNodes() {
       this.getAllPermissions()
+      this.curNode = defaultNode
     },
     nodeClick(obj, node) {
       this.curNode = node
@@ -197,6 +197,11 @@ export default {
         .then(() => {
           const tree = this.$refs.tree
           tree.remove(this.curNode)
+          /**
+					 * 由于el-tree设置选中节点时，并没有回传任何值
+           * 为了避免当前选中节点为null时产生异常
+					 * 所以此处自行设置当前已选中接点为根节点
+					 * */
           tree.setCurrentKey(1)
           this.curNode = defaultNode
           this.$message.success('删除成功')
@@ -208,7 +213,9 @@ export default {
         {
           id: 1e9 + ~~(Math.random() * 1e4),
           label: this.permissionForm.permissionName,
-          attr: Object.assign({}, this.permissionForm)
+          attr: Object.assign({}, this.permissionForm, {
+            parentId: this.curNode.data.id
+          })
         },
         this.curNode
       )
@@ -230,12 +237,12 @@ export default {
       this.$refs['permissionForm'].resetFields()
     },
     /**
-     * 根据数据生成相应节点树，生成树的格式为{label, id, children, attr}
-     * @param permissions 权限列表
-     * @param parentId 父节点ID
-     * @param treeList 生成的节点数列表
-     * @returns {*[]}
-     */
+       * 根据数据生成相应节点树，生成树的格式为{label, id, children, attr}
+       * @param permissions 权限列表
+       * @param parentId 父节点ID
+       * @param treeList 生成的节点数列表
+       * @returns {*[]}
+       */
     generateTree(permissions, parentId, treeList = []) {
       permissions.map(item => {
         // 找出当前父节点的所有子节点
@@ -271,53 +278,57 @@ export default {
 </script>
 
 <style scoped lang="scss">
-#sys {
-  display: flex;
-  flex-wrap: nowrap;
-  padding: 20px 10px 0;
-  font-size: 16px;
-  .el-button,
-  .el-button span {
-    font-weight: bold;
-    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
-      "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-  }
-  & > div {
-    flex-basis: 50%;
-  }
-  .sys-premission {
-    width: 60%;
-    margin-top: 20px;
-  }
+	#sys {
+		display: flex;
+		flex-wrap: nowrap;
+		padding: 20px 10px 0;
+		font-size: 16px;
 
-  .dialog-footer {
-    text-align: center;
+		.el-button,
+		.el-button span {
+			font-weight: bold;
+			font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
+			"Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+		}
 
-    .confirm {
-      margin-right: 10px;
-    }
-  }
+		& > div {
+			flex-basis: 50%;
+		}
 
-  .form {
-    display: flex;
-    flex-wrap: wrap;
-    margin-right: 70px;
+		.sys-premission {
+			width: 60%;
+			margin-top: 20px;
+		}
 
-    .el-form-item {
-      flex-basis: 50%;
-    }
-  }
+		.dialog-footer {
+			text-align: center;
 
-  .permission-detail {
-    margin-top: 20px;
-    .el-input {
-      margin-bottom: 14px;
-    }
-  }
-}
+			.confirm {
+				margin-right: 10px;
+			}
+		}
+
+		.form {
+			display: flex;
+			flex-wrap: wrap;
+			margin-right: 70px;
+
+			.el-form-item {
+				flex-basis: 50%;
+			}
+		}
+
+		.permission-detail {
+			margin-top: 20px;
+
+			.el-input {
+				margin-bottom: 14px;
+			}
+		}
+	}
 </style>
 <style>
-.el-input-group__prepend {
-  width: 97px;
-}
+	.el-input-group__prepend {
+		width: 97px;
+	}
 </style>
