@@ -72,12 +72,23 @@ service.interceptors.response.use(
     }
   },
   error => {
-    console.log('err' + error) // for debug
-    Message({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000
-    })
+    console.log(error.response.status) // for debug
+    if (error.response.status === 401) {
+      MessageBox({
+        title: '提示',
+        message: '身份验证失败，请重新登录',
+        type: 'error',
+        showClose: false,
+        closeOnClickModal: false
+      }).then(() => store.dispatch('user/logout'))
+    } else {
+      Message({
+        message: error.message,
+        type: 'error',
+        duration: 5 * 1000
+      })
+    }
+
     return Promise.reject(error)
   }
 )

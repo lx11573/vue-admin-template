@@ -12,7 +12,8 @@
 					:props="defaultProps"
 					accordion
 					highlight-current
-					:default-expanded-keys='[1]'
+					:default-expanded-keys='defaultExpandedKeys'
+					:expand-on-click-node='false'
 					:current-node-key='1'
 					node-key="id"
 					class="permission-tree"
@@ -20,8 +21,8 @@
 				)
 
 		div
-			el-button(type="primary" icon="el-icon-plus" @click="showDialog=true") 插入节点
-			el-button(type="warning" icon="el-icon-edit" @click="editNode") 修改节点
+			el-button(type="primary" icon="el-icon-plus" @click="dialogShow('新增权限')") 插入节点
+			el-button(type="warning" icon="el-icon-edit" @click="dialogShow('修改权限')") 修改节点
 			el-button(type="danger" icon="el-icon-delete" @click="delNode") 删除节点
 
 			.permission-detail
@@ -40,7 +41,7 @@
 				el-input(:value="curCheckedNode.permissionSort" readonly)
 					template(slot="prepend") 展示顺序
 
-		el-dialog(title="新增权限" :visible.sync="showDialog" @closed="resetForm")
+		el-dialog(:title="dialogTitle" :visible.sync="showDialog" @closed="resetForm")
 
 			el-form.form(:model="permissionForm" :rules="rules" ref="permissionForm")
 				el-form-item(label="父节点名称" label-width="120px" required)
@@ -98,11 +99,12 @@ export default {
   mixins: [],
   data() {
     return {
-      str: '',
+      dialogTitle: '新增权限',
       defaultProps: {
         label: 'label',
         childrend: 'children'
       },
+      defaultExpandedKeys: [1],
       checkStrictly: false,
       routes: [],
       curNode: defaultNode,
@@ -160,10 +162,6 @@ export default {
     this.getAllPermissions()
   },
   methods: {
-    async getAllPermissions() {
-      const allPermission = await getAllPermissions(1)
-      this.routes = this.generateTree(allPermission, 0)
-    },
     toggleAllNodes(status = true) {
       const allNodes = this.$refs.tree.store._getAllNodes()
       for (let i = 0; i < allNodes.length; i++) {
@@ -177,10 +175,14 @@ export default {
     nodeClick(obj, node) {
       this.curNode = node
     },
-    editNode() {
-      if (this.isRootNode) {
-        this.$message.error(`根节点不允许修改`)
-        return
+    dialogShow(title) {
+      this.dialogTitle = title
+      if (title === '修改权限') {
+        if (this.isRootNode) {
+          this.$message.error(`根节点不允许修改`)
+          return
+        }
+        this.permissionForm = Object.assign({}, this.curCheckedNode)
       }
       this.showDialog = true
     },
@@ -196,6 +198,7 @@ export default {
       })
         .then(() => {
           const tree = this.$refs.tree
+          // TODO: 接入后端
           tree.remove(this.curNode)
           /**
 					 * 由于el-tree设置选中节点时，并没有回传任何值
@@ -209,6 +212,8 @@ export default {
         .catch(() => this.$message.info('已取消删除'))
     },
     addNode() {
+      this.showDialog = false
+      // TODO: 接入后端
       this.$refs.tree.append(
         {
           id: 1e9 + ~~(Math.random() * 1e4),
@@ -219,15 +224,24 @@ export default {
         },
         this.curNode
       )
-      this.showDialog = false
       this.$message.success('添加成功')
       this.curNode.expanded = true
+    },
+    editNode() {
+      this.showDialog = false
+      // TODO: 接入后端
+      Object.assign(this.curNode.data.attr, this.permissionForm)
+      this.$message.success('修改成功')
     },
     validForm() {
       this.$refs['permissionForm'].validate(result => {
         console.log(result)
         if (result) {
-          this.addNode()
+          if (this.dialogTitle === '新增权限') {
+            this.addNode()
+          } else {
+            this.editNode()
+          }
         } else {
           this.$message.error('验证未通过')
         }
@@ -236,13 +250,20 @@ export default {
     resetForm() {
       this.$refs['permissionForm'].resetFields()
     },
+    async getAllPermissions(isRefresh, defaultExpandedKeys) {
+      if (isRefresh === true) {
+        this.defaultExpandedKeys = defaultExpandedKeys
+      }
+      const allPermission = await getAllPermissions(1)
+      this.routes = this.generateTree(allPermission, 0)
+    },
     /**
-       * 根据数据生成相应节点树，生成树的格式为{label, id, children, attr}
-       * @param permissions 权限列表
-       * @param parentId 父节点ID
-       * @param treeList 生成的节点数列表
-       * @returns {*[]}
-       */
+		 * 根据数据生成相应节点树，生成树的格式为{label, id, children, attr}
+		 * @param permissions 权限列表
+		 * @param parentId 父节点ID
+		 * @param treeList 生成的节点数列表
+		 * @returns {*[]}
+		 */
     generateTree(permissions, parentId, treeList = []) {
       permissions.map(item => {
         // 找出当前父节点的所有子节点
@@ -330,5 +351,8 @@ export default {
 <style>
 	.el-input-group__prepend {
 		width: 97px;
+	}
+	.el-dialog {
+		width: 70%;
 	}
 </style>
